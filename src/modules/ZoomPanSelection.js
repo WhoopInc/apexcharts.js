@@ -267,16 +267,16 @@ export default class ZoomPanSelection extends Toolbar {
         this.drawSelectionRect(w.globals.selection)
       } else {
         if (
-          w.config.chart.selection.xaxis.min !== undefined &&
-          w.config.chart.selection.xaxis.max !== undefined
+          w.config.chart.selection.yaxis.min !== undefined &&
+          w.config.chart.selection.yaxis.max !== undefined
         ) {
           const x =
-            (w.config.chart.selection.xaxis.min - w.globals.minX) /
-            xyRatios.xRatio
+            (w.config.chart.selection.yaxis.min - w.globals.minY) /
+            xyRatios.invertedYRatio
           const width =
             w.globals.gridWidth -
-            (w.globals.maxX - w.config.chart.selection.xaxis.max) /
-              xyRatios.xRatio -
+            (w.globals.maxY - w.config.chart.selection.yaxis.max) /
+              xyRatios.invertedYRatio -
             x
           let selectionRect = {
             x,

@@ -15678,9 +15678,9 @@
           if (typeof w.globals.selection !== 'undefined' && w.globals.selection !== null) {
             this.drawSelectionRect(w.globals.selection);
           } else {
-            if (w.config.chart.selection.xaxis.min !== undefined && w.config.chart.selection.xaxis.max !== undefined) {
-              var x = (w.config.chart.selection.xaxis.min - w.globals.minX) / xyRatios.xRatio;
-              var width = w.globals.gridWidth - (w.globals.maxX - w.config.chart.selection.xaxis.max) / xyRatios.xRatio - x;
+            if (w.config.chart.selection.yaxis.min !== undefined && w.config.chart.selection.yaxis.max !== undefined) {
+              var x = (w.config.chart.selection.yaxis.min - w.globals.minY) / xyRatios.invertedYRatio;
+              var width = w.globals.gridWidth - (w.globals.maxY - w.config.chart.selection.yaxis.max) / xyRatios.invertedYRatio - x;
               var selectionRect = {
                 x: x,
                 y: 0,
