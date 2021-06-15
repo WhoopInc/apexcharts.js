@@ -142,14 +142,14 @@ export default class ZoomPanSelection extends Toolbar {
       e.type === 'touchmove' || e.type === 'touchstart'
         ? e.touches[0].clientX
         : e.type === 'touchend'
-        ? e.changedTouches[0].clientX
-        : e.clientX
+          ? e.changedTouches[0].clientX
+          : e.clientX
     me.clientY =
       e.type === 'touchmove' || e.type === 'touchstart'
         ? e.touches[0].clientY
         : e.type === 'touchend'
-        ? e.changedTouches[0].clientY
-        : e.clientY
+          ? e.changedTouches[0].clientY
+          : e.clientY
 
     if (e.type === 'mousedown' && e.which === 1) {
       let gridRectDim = me.gridRect.getBoundingClientRect()
@@ -191,10 +191,15 @@ export default class ZoomPanSelection extends Toolbar {
       e.type === 'touchend' ||
       e.type === 'mouseleave'
     ) {
+      console.log('event type', e.type)
       // we will be calling getBoundingClientRect on each mousedown/mousemove/mouseup
       let gridRectDim = me.gridRect.getBoundingClientRect()
 
-      if (me.w.globals.mousedown) {
+      console.log('me globals', me.w.globals.mouseup)
+
+      // Issue is that it's not going in this if statement and then going to the selectionDrawn function - that's what kicks off the selection event handler
+      if (me.w.globals.mousedown || e.type === 'mouseup') {
+        console.log('in here')
         // user released the drag, now do all the calculations
         me.endX = me.clientX - gridRectDim.left
         me.endY = me.clientY - gridRectDim.top
@@ -202,6 +207,7 @@ export default class ZoomPanSelection extends Toolbar {
         me.dragY = Math.abs(me.endY - me.startY)
 
         if (w.globals.zoomEnabled || w.globals.selectionEnabled) {
+          console.log('should go in here maybe')
           me.selectionDrawn({
             context: me,
             zoomtype
@@ -270,7 +276,7 @@ export default class ZoomPanSelection extends Toolbar {
           const width =
             w.globals.gridWidth -
             (w.globals.maxX - w.config.chart.selection.xaxis.max) /
-              xyRatios.xRatio -
+            xyRatios.xRatio -
             x
           let selectionRect = {
             x,
@@ -454,6 +460,8 @@ export default class ZoomPanSelection extends Toolbar {
         const gridRectDim = this.gridRect.getBoundingClientRect()
         const selectionRect = selRect.node.getBoundingClientRect()
 
+        console.log('testing in here', w.globals)
+
         const minX =
           w.globals.xAxisScale.niceMin +
           (selectionRect.left - gridRectDim.left) * xyRatios.xRatio
@@ -491,6 +499,7 @@ export default class ZoomPanSelection extends Toolbar {
   }
 
   selectionDrawn({ context, zoomtype }) {
+    console.log('selection drawn')
     const w = this.w
     const me = context
     const xyRatios = this.xyRatios
