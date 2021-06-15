@@ -142,14 +142,14 @@ export default class ZoomPanSelection extends Toolbar {
       e.type === 'touchmove' || e.type === 'touchstart'
         ? e.touches[0].clientX
         : e.type === 'touchend'
-          ? e.changedTouches[0].clientX
-          : e.clientX
+        ? e.changedTouches[0].clientX
+        : e.clientX
     me.clientY =
       e.type === 'touchmove' || e.type === 'touchstart'
         ? e.touches[0].clientY
         : e.type === 'touchend'
-          ? e.changedTouches[0].clientY
-          : e.clientY
+        ? e.changedTouches[0].clientY
+        : e.clientY
 
     if (e.type === 'mousedown' && e.which === 1) {
       let gridRectDim = me.gridRect.getBoundingClientRect()
@@ -276,7 +276,7 @@ export default class ZoomPanSelection extends Toolbar {
           const width =
             w.globals.gridWidth -
             (w.globals.maxX - w.config.chart.selection.xaxis.max) /
-            xyRatios.xRatio -
+              xyRatios.xRatio -
             x
           let selectionRect = {
             x,
