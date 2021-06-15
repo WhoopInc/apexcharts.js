@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Testing</title>
+
+    <link href="../assets/styles.css" rel="stylesheet" />
+
+    <style>
+        #wrapper {
+            padding-top: 20px;
+            padding-left: 10px;
+            padding-right: 10px;
+            background: #fff;
+            border: 1px solid #ddd;
+            box-shadow: 0 22px 35px -16px rgba(0, 0, 0, 0.1);
+            max-width: 650px;
+            margin: 35px auto;
+        }
+    </style>
+
+    <script>
+        window.Promise ||
+            document.write(
+                '<script src="https://cdn.jsdelivr.net/npm/promise-polyfill@8/dist/polyfill.min.js"><\/script>'
+            )
+        window.Promise ||
+            document.write(
+                '<script src="https://cdn.jsdelivr.net/npm/eligrey-classlist-js-polyfill@1.2.20171210/classList.min.js"><\/script>'
+            )
+        window.Promise ||
+            document.write(
+                '<script src="https://cdn.jsdelivr.net/npm/findindex_polyfill_mdn"><\/script>'
+            )
+    </script>
+
+
+    <script src="../../dist/apexcharts.js"></script>
+</head>
+
+<body>
+    <div id="wrapper">
+        <div id="chart-bar"></div>
+    </div>
+
+    <script>
+
+        var options2 = {
+            chart: {
+                id: "chart1",
+                height: 130,
+                type: "rangeBar",
+                foreColor: "#ccc",
+                /*brush: {
+                target: "chart2",
+                enabled: true
+                },*/
+                events: {
+                    selection: function (chartContext, { xaxis, yaxis }) {
+                        console.log(xaxis)
+                    }
+                },
+                toolbar: {
+                    show: true,
+                    tools: {
+                        download: false,
+                        selection: true,
+                        zoom: true,
+                        zoomin: false,
+                        zoomout: false,
+                        pan: false
+                        //reset: true | '<img src="/static/icons/reset.png" width="20">'
+                    },
+                    autoSelected: 'selection'
+                },
+                selection: {
+                    enabled: true,
+                    fill: {
+                        color: "#fff",
+                        opacity: 0.4
+                    },
+                    /*xaxis: {
+                        min: new Date('2021-04-25T06:19:06.102+0000').getTime(),
+                        max: new Date('2021-04-30T12:21:49.492+0000').getTime()
+                    }*/
+                }
+            },
+            colors: ["blue"],
+            series: [
+                {
+                    data: [{ "id": 762123, "x": "Sleep", "y": [1619762132516, 1619785309492] }, { "id": 760209, "x": "Sleep", "y": [1619671648582, 1619703653184] }, { "id": 755578, "x": "Sleep", "y": [1619580804313, 1619614275863] }, { "id": 753221, "x": "Sleep", "y": [1619492971164, 1619515395441] }, { "id": 751565, "x": "Sleep", "y": [1619408832809, 1619442621586] }, { "id": 751253, "x": "Sleep", "y": [1619331546102, 1619356555316] }]
+                }
+            ],
+            plotOptions: {
+                bar: {
+                    horizontal: true
+                }
+            },
+            stroke: {
+                width: 2
+            },
+            grid: {
+                borderColor: "#444"
+            },
+            markers: {
+                size: 0
+            },
+            xaxis: {
+                type: "datetime",
+                tooltip: {
+                    enabled: false
+                },
+                min: new Date('2021-04-25T06:19:06.102+0000').getTime(),
+                max: new Date('2021-04-30T12:21:49.492+0000').getTime()
+            },
+            /*yaxis: {
+                tickAmount: 2
+            }*/
+        };
+
+        var chart2 = new ApexCharts(document.querySelector("#chart-bar"), options2);
+
+        chart2.render();
+
+
+    </script>
+
+
+</body>
+
+</html>
