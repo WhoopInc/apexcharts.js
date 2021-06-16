@@ -191,15 +191,11 @@ export default class ZoomPanSelection extends Toolbar {
       e.type === 'touchend' ||
       e.type === 'mouseleave'
     ) {
-      console.log('event type', e.type)
       // we will be calling getBoundingClientRect on each mousedown/mousemove/mouseup
       let gridRectDim = me.gridRect.getBoundingClientRect()
 
-      console.log('me globals', me.w.globals.mouseup)
-
       // Issue is that it's not going in this if statement and then going to the selectionDrawn function - that's what kicks off the selection event handler
       if (me.w.globals.mousedown || e.type === 'mouseup') {
-        console.log('in here')
         // user released the drag, now do all the calculations
         me.endX = me.clientX - gridRectDim.left
         me.endY = me.clientY - gridRectDim.top
@@ -207,7 +203,6 @@ export default class ZoomPanSelection extends Toolbar {
         me.dragY = Math.abs(me.endY - me.startY)
 
         if (w.globals.zoomEnabled || w.globals.selectionEnabled) {
-          console.log('should go in here maybe')
           me.selectionDrawn({
             context: me,
             zoomtype
@@ -270,6 +265,16 @@ export default class ZoomPanSelection extends Toolbar {
           w.config.chart.selection.yaxis.min !== undefined &&
           w.config.chart.selection.yaxis.max !== undefined
         ) {
+          // const x =
+          //   (w.config.chart.selection.xaxis.min - w.globals.minX) /
+          //   xyRatios.xRatio
+
+          // const width =
+          //   (w.globals.maxY - w.config.chart.selection.yaxis.max) /
+          //   xyRatios.invertedYRatio -
+          //   x
+          // This is so that the yaxis min/max vals will be used as bounds on the initial load
+          // But this is not setting the selection values properly on the global config (it's undefined)
           const x =
             (w.config.chart.selection.yaxis.min - w.globals.minY) /
             xyRatios.invertedYRatio
@@ -291,9 +296,13 @@ export default class ZoomPanSelection extends Toolbar {
           this.makeSelectionRectDraggable()
           if (typeof w.config.chart.events.selection === 'function') {
             w.config.chart.events.selection(this.ctx, {
+              // xaxis: {
+              //   min: w.config.chart.selection.axis.min,
+              //   max: w.config.chart.selection.xaxis.max
+              // },
               xaxis: {
-                min: w.config.chart.selection.xaxis.min,
-                max: w.config.chart.selection.xaxis.max
+                min: w.config.chart.selection.yaxis.min,
+                max: w.config.chart.selection.yaxis.max
               },
               yaxis: {}
             })
@@ -345,6 +354,7 @@ export default class ZoomPanSelection extends Toolbar {
           'stroke-opacity': w.config.chart.selection.stroke.opacity
         })
 
+        console.log('selectionrect', x, width)
         Graphics.setAttrs(selectionRect.node, scalingAttrs)
       }
     }
@@ -426,6 +436,7 @@ export default class ZoomPanSelection extends Toolbar {
   }
 
   selectionDragging(type, e) {
+    // TODO : max value is changing on min value drag?
     const w = this.w
     const xyRatios = this.xyRatios
 
@@ -459,8 +470,6 @@ export default class ZoomPanSelection extends Toolbar {
       this.w.globals.selectionResizeTimer = window.setTimeout(() => {
         const gridRectDim = this.gridRect.getBoundingClientRect()
         const selectionRect = selRect.node.getBoundingClientRect()
-
-        console.log('testing in here', w.globals)
 
         const minX =
           w.globals.xAxisScale.niceMin +
@@ -499,34 +508,56 @@ export default class ZoomPanSelection extends Toolbar {
   }
 
   selectionDrawn({ context, zoomtype }) {
-    console.log('selection drawn')
     const w = this.w
     const me = context
     const xyRatios = this.xyRatios
     const toolbar = this.ctx.toolbar
 
-    if (me.startX > me.endX) {
-      let tempX = me.startX
-      me.startX = me.endX
-      me.endX = tempX
+    const getSelAttr = (attr) => {
+      return parseFloat(me.selectionRect.node.getAttribute(attr))
     }
-    if (me.startY > me.endY) {
-      let tempY = me.startY
-      me.startY = me.endY
-      me.endY = tempY
+    const testing = {
+      x: getSelAttr('x'),
+      y: getSelAttr('y'),
+      width: getSelAttr('width'),
+      height: getSelAttr('height')
     }
+
+    me.startX = testing.x
+    me.endX = testing.x + testing.width
+
+    // if (me.startX > me.endX) {
+    //   console.log(me)
+    //   console.log('me.endX here', me.startX, me.endX)
+    //   let tempX = me.startX
+    //   me.startX = me.endX
+    //   // me.endX = tempX
+    //   me.endX = me.selection.x + me.selection.width
+    // }
+    // if (me.startY > me.endY) {
+    //   console.log('me.startY here')
+    //   let tempY = me.startY
+    //   me.startY = me.endY
+    //   me.endY = tempY
+    // }
 
     let xLowestValue = undefined
     let xHighestValue = undefined
 
+    // TODO : add this check at places where I changed things
     if (!w.globals.isTimelineBar) {
       xLowestValue = w.globals.xAxisScale.niceMin + me.startX * xyRatios.xRatio
       xHighestValue = w.globals.xAxisScale.niceMin + me.endX * xyRatios.xRatio
     } else {
+      console.log(me)
+      console.log('testing', me.startX, me.endX)
+      // endX is getting lowered
       xLowestValue =
         w.globals.yAxisScale[0].niceMin + me.startX * xyRatios.invertedYRatio
+      // TODO it's switching xhighestvalue to the old lowest value. why though? - this needs to be fixed
       xHighestValue =
         w.globals.yAxisScale[0].niceMin + me.endX * xyRatios.invertedYRatio
+      console.log('xHighestValue', new Date(xHighestValue))
     }
 
     // TODO: we will consider the 1st y axis values here for getting highest and lowest y
@@ -631,6 +662,8 @@ export default class ZoomPanSelection extends Toolbar {
 
         w.globals.selection = me.selection
         if (typeof w.config.chart.events.selection === 'function') {
+          console.log('function here')
+          // TODO : xaxis is sending back global min instead of min of range
           w.config.chart.events.selection(me.ctx, {
             xaxis,
             yaxis

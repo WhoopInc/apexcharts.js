@@ -15609,22 +15609,18 @@
         }
 
         if (e.type === 'mouseup' || e.type === 'touchend' || e.type === 'mouseleave') {
-          console.log('event type', e.type); // we will be calling getBoundingClientRect on each mousedown/mousemove/mouseup
+          // we will be calling getBoundingClientRect on each mousedown/mousemove/mouseup
+          var _gridRectDim = me.gridRect.getBoundingClientRect(); // Issue is that it's not going in this if statement and then going to the selectionDrawn function - that's what kicks off the selection event handler
 
-          var _gridRectDim = me.gridRect.getBoundingClientRect();
-
-          console.log('me globals', me.w.globals.mouseup); // Issue is that it's not going in this if statement and then going to the selectionDrawn function - that's what kicks off the selection event handler
 
           if (me.w.globals.mousedown || e.type === 'mouseup') {
-            console.log('in here'); // user released the drag, now do all the calculations
-
+            // user released the drag, now do all the calculations
             me.endX = me.clientX - _gridRectDim.left;
             me.endY = me.clientY - _gridRectDim.top;
             me.dragX = Math.abs(me.endX - me.startX);
             me.dragY = Math.abs(me.endY - me.startY);
 
             if (w.globals.zoomEnabled || w.globals.selectionEnabled) {
-              console.log('should go in here maybe');
               me.selectionDrawn({
                 context: me,
                 zoomtype: zoomtype
@@ -15679,6 +15675,15 @@
             this.drawSelectionRect(w.globals.selection);
           } else {
             if (w.config.chart.selection.yaxis.min !== undefined && w.config.chart.selection.yaxis.max !== undefined) {
+              // const x =
+              //   (w.config.chart.selection.xaxis.min - w.globals.minX) /
+              //   xyRatios.xRatio
+              // const width =
+              //   (w.globals.maxY - w.config.chart.selection.yaxis.max) /
+              //   xyRatios.invertedYRatio -
+              //   x
+              // This is so that the yaxis min/max vals will be used as bounds on the initial load
+              // But this is not setting the selection values properly on the global config (it's undefined)
               var x = (w.config.chart.selection.yaxis.min - w.globals.minY) / xyRatios.invertedYRatio;
               var width = w.globals.gridWidth - (w.globals.maxY - w.config.chart.selection.yaxis.max) / xyRatios.invertedYRatio - x;
               var selectionRect = {
@@ -15695,9 +15700,13 @@
 
               if (typeof w.config.chart.events.selection === 'function') {
                 w.config.chart.events.selection(this.ctx, {
+                  // xaxis: {
+                  //   min: w.config.chart.selection.axis.min,
+                  //   max: w.config.chart.selection.xaxis.max
+                  // },
                   xaxis: {
-                    min: w.config.chart.selection.xaxis.min,
-                    max: w.config.chart.selection.xaxis.max
+                    min: w.config.chart.selection.yaxis.min,
+                    max: w.config.chart.selection.yaxis.max
                   },
                   yaxis: {}
                 });
@@ -15758,6 +15767,7 @@
               'stroke-dasharray': w.config.chart.selection.stroke.dashArray,
               'stroke-opacity': w.config.chart.selection.stroke.opacity
             });
+            console.log('selectionrect', x, width);
             Graphics.setAttrs(selectionRect.node, scalingAttrs);
           }
         }
@@ -15842,6 +15852,7 @@
       value: function selectionDragging(type, e) {
         var _this3 = this;
 
+        // TODO : max value is changing on min value drag?
         var w = this.w;
         var xyRatios = this.xyRatios;
         var selRect = this.selectionRect;
@@ -15871,7 +15882,6 @@
             var gridRectDim = _this3.gridRect.getBoundingClientRect();
 
             var selectionRect = selRect.node.getBoundingClientRect();
-            console.log('testing in here', w.globals);
             var minX = w.globals.xAxisScale.niceMin + (selectionRect.left - gridRectDim.left) * xyRatios.xRatio;
             var maxX = w.globals.xAxisScale.niceMin + (selectionRect.right - gridRectDim.left) * xyRatios.xRatio;
             var minY = w.globals.yAxisScale[0].niceMin + (gridRectDim.bottom - selectionRect.bottom) * xyRatios.yRatio[0];
@@ -15899,33 +15909,51 @@
       value: function selectionDrawn(_ref4) {
         var context = _ref4.context,
             zoomtype = _ref4.zoomtype;
-        console.log('selection drawn');
         var w = this.w;
         var me = context;
         var xyRatios = this.xyRatios;
         var toolbar = this.ctx.toolbar;
 
-        if (me.startX > me.endX) {
-          var tempX = me.startX;
-          me.startX = me.endX;
-          me.endX = tempX;
-        }
+        var getSelAttr = function getSelAttr(attr) {
+          return parseFloat(me.selectionRect.node.getAttribute(attr));
+        };
 
-        if (me.startY > me.endY) {
-          var tempY = me.startY;
-          me.startY = me.endY;
-          me.endY = tempY;
-        }
+        var testing = {
+          x: getSelAttr('x'),
+          y: getSelAttr('y'),
+          width: getSelAttr('width'),
+          height: getSelAttr('height')
+        };
+        me.startX = testing.x;
+        me.endX = testing.x + testing.width; // if (me.startX > me.endX) {
+        //   console.log(me)
+        //   console.log('me.endX here', me.startX, me.endX)
+        //   let tempX = me.startX
+        //   me.startX = me.endX
+        //   // me.endX = tempX
+        //   me.endX = me.selection.x + me.selection.width
+        // }
+        // if (me.startY > me.endY) {
+        //   console.log('me.startY here')
+        //   let tempY = me.startY
+        //   me.startY = me.endY
+        //   me.endY = tempY
+        // }
 
         var xLowestValue = undefined;
-        var xHighestValue = undefined;
+        var xHighestValue = undefined; // TODO : add this check at places where I changed things
 
         if (!w.globals.isTimelineBar) {
           xLowestValue = w.globals.xAxisScale.niceMin + me.startX * xyRatios.xRatio;
           xHighestValue = w.globals.xAxisScale.niceMin + me.endX * xyRatios.xRatio;
         } else {
-          xLowestValue = w.globals.yAxisScale[0].niceMin + me.startX * xyRatios.invertedYRatio;
+          console.log(me);
+          console.log('testing', me.startX, me.endX); // endX is getting lowered
+
+          xLowestValue = w.globals.yAxisScale[0].niceMin + me.startX * xyRatios.invertedYRatio; // TODO it's switching xhighestvalue to the old lowest value. why though? - this needs to be fixed
+
           xHighestValue = w.globals.yAxisScale[0].niceMin + me.endX * xyRatios.invertedYRatio;
+          console.log('xHighestValue', new Date(xHighestValue));
         } // TODO: we will consider the 1st y axis values here for getting highest and lowest y
 
 
@@ -16021,6 +16049,8 @@
             w.globals.selection = me.selection;
 
             if (typeof w.config.chart.events.selection === 'function') {
+              console.log('function here'); // TODO : xaxis is sending back global min instead of min of range
+
               w.config.chart.events.selection(me.ctx, {
                 xaxis: _xaxis,
                 yaxis: _yaxis

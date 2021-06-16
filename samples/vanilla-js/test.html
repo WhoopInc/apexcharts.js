@@ -60,7 +60,10 @@
                 },*/
                 events: {
                     selection: function (chartContext, { xaxis, yaxis }) {
-                        console.log(xaxis)
+                        console.log('xaxis', xaxis)
+                        console.log(new Date(xaxis.min))
+                        console.log(new Date(xaxis.max))
+                        console.log('yaxis', yaxis)
                     }
                 },
                 toolbar: {
