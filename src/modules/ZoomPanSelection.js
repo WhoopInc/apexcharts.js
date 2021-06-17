@@ -186,15 +186,20 @@ export default class ZoomPanSelection extends Toolbar {
       }
     }
 
+    // add mousedown?
     if (
       e.type === 'mouseup' ||
       e.type === 'touchend' ||
       e.type === 'mouseleave'
     ) {
+      console.log('event type', e.type)
       // we will be calling getBoundingClientRect on each mousedown/mousemove/mouseup
       let gridRectDim = me.gridRect.getBoundingClientRect()
 
       // Issue is that it's not going in this if statement and then going to the selectionDrawn function - that's what kicks off the selection event handler
+      // TODO : Might be other events that need to be checked?? Occasionally drag events aren't getting caught
+      // TODO : look at touchend and mouseleave to handle those
+      // mousedown is probably just not getting set properly for me stuff
       if (me.w.globals.mousedown || e.type === 'mouseup') {
         // user released the drag, now do all the calculations
         me.endX = me.clientX - gridRectDim.left
@@ -261,28 +266,38 @@ export default class ZoomPanSelection extends Toolbar {
       ) {
         this.drawSelectionRect(w.globals.selection)
       } else {
+        if (w.globals.isTimelineBar) {
+        } else {
+        }
         if (
-          w.config.chart.selection.yaxis.min !== undefined &&
-          w.config.chart.selection.yaxis.max !== undefined
+          (w.globals.isTimelineBar &&
+            w.config.chart.selection.yaxis.min !== undefined &&
+            w.config.chart.selection.yaxis.max !== undefined) ||
+          (!w.globals.isTimelineBar &&
+            w.config.chart.selection.xaxis.min !== undefined &&
+            w.config.chart.selection.xaxis.max !== undefined)
         ) {
-          // const x =
-          //   (w.config.chart.selection.xaxis.min - w.globals.minX) /
-          //   xyRatios.xRatio
-
-          // const width =
-          //   (w.globals.maxY - w.config.chart.selection.yaxis.max) /
-          //   xyRatios.invertedYRatio -
-          //   x
           // This is so that the yaxis min/max vals will be used as bounds on the initial load
-          // But this is not setting the selection values properly on the global config (it's undefined)
-          const x =
-            (w.config.chart.selection.yaxis.min - w.globals.minY) /
-            xyRatios.invertedYRatio
-          const width =
-            w.globals.gridWidth -
-            (w.globals.maxY - w.config.chart.selection.yaxis.max) /
-              xyRatios.invertedYRatio -
-            x
+          let x, width
+          if (w.globals.isTimelineBar) {
+            x =
+              (w.config.chart.selection.yaxis.min - w.globals.minY) /
+              xyRatios.invertedYRatio
+            width =
+              w.globals.gridWidth -
+              (w.globals.maxY - w.config.chart.selection.yaxis.max) /
+                xyRatios.invertedYRatio -
+              x
+          } else {
+            x =
+              (w.config.chart.selection.xaxis.min - w.globals.minX) /
+              xyRatios.xRatio
+
+            width =
+              (w.globals.maxY - w.config.chart.selection.yaxis.max) /
+                xyRatios.invertedYRatio -
+              x
+          }
           let selectionRect = {
             x,
             y: 0,
@@ -295,14 +310,16 @@ export default class ZoomPanSelection extends Toolbar {
           this.drawSelectionRect(selectionRect)
           this.makeSelectionRectDraggable()
           if (typeof w.config.chart.events.selection === 'function') {
+            const xAxisMin = w.globals.isTimelineBar
+              ? w.config.chart.selection.yaxis.min
+              : w.config.chart.selection.axis.min
+            const xAxisMax = w.globals.isTimelineBar
+              ? w.config.chart.selection.yaxis.max
+              : w.config.chart.selection.axis.max
             w.config.chart.events.selection(this.ctx, {
-              // xaxis: {
-              //   min: w.config.chart.selection.axis.min,
-              //   max: w.config.chart.selection.xaxis.max
-              // },
               xaxis: {
-                min: w.config.chart.selection.yaxis.min,
-                max: w.config.chart.selection.yaxis.max
+                min: xAxisMin,
+                max: xAxisMax
               },
               yaxis: {}
             })
@@ -354,7 +371,6 @@ export default class ZoomPanSelection extends Toolbar {
           'stroke-opacity': w.config.chart.selection.stroke.opacity
         })
 
-        console.log('selectionrect', x, width)
         Graphics.setAttrs(selectionRect.node, scalingAttrs)
       }
     }
@@ -513,51 +529,43 @@ export default class ZoomPanSelection extends Toolbar {
     const xyRatios = this.xyRatios
     const toolbar = this.ctx.toolbar
 
-    const getSelAttr = (attr) => {
-      return parseFloat(me.selectionRect.node.getAttribute(attr))
-    }
-    const testing = {
-      x: getSelAttr('x'),
-      y: getSelAttr('y'),
-      width: getSelAttr('width'),
-      height: getSelAttr('height')
-    }
+    if (w.globals.isTimelineBar) {
+      const getSelAttr = (attr) => {
+        return parseFloat(me.selectionRect.node.getAttribute(attr))
+      }
+      const testing = {
+        x: getSelAttr('x'),
+        y: getSelAttr('y'),
+        width: getSelAttr('width'),
+        height: getSelAttr('height')
+      }
 
-    me.startX = testing.x
-    me.endX = testing.x + testing.width
-
-    // if (me.startX > me.endX) {
-    //   console.log(me)
-    //   console.log('me.endX here', me.startX, me.endX)
-    //   let tempX = me.startX
-    //   me.startX = me.endX
-    //   // me.endX = tempX
-    //   me.endX = me.selection.x + me.selection.width
-    // }
-    // if (me.startY > me.endY) {
-    //   console.log('me.startY here')
-    //   let tempY = me.startY
-    //   me.startY = me.endY
-    //   me.endY = tempY
-    // }
+      me.startX = testing.x
+      me.endX = testing.x + testing.width
+    } else {
+      if (me.startX > me.endX) {
+        let tempX = me.startX
+        me.startX = me.endX
+        me.endX = tempX
+      }
+      if (me.startY > me.endY) {
+        let tempY = me.startY
+        me.startY = me.endY
+        me.endY = tempY
+      }
+    }
 
     let xLowestValue = undefined
     let xHighestValue = undefined
 
-    // TODO : add this check at places where I changed things
     if (!w.globals.isTimelineBar) {
       xLowestValue = w.globals.xAxisScale.niceMin + me.startX * xyRatios.xRatio
       xHighestValue = w.globals.xAxisScale.niceMin + me.endX * xyRatios.xRatio
     } else {
-      console.log(me)
-      console.log('testing', me.startX, me.endX)
-      // endX is getting lowered
       xLowestValue =
         w.globals.yAxisScale[0].niceMin + me.startX * xyRatios.invertedYRatio
-      // TODO it's switching xhighestvalue to the old lowest value. why though? - this needs to be fixed
       xHighestValue =
         w.globals.yAxisScale[0].niceMin + me.endX * xyRatios.invertedYRatio
-      console.log('xHighestValue', new Date(xHighestValue))
     }
 
     // TODO: we will consider the 1st y axis values here for getting highest and lowest y
@@ -662,7 +670,6 @@ export default class ZoomPanSelection extends Toolbar {
 
         w.globals.selection = me.selection
         if (typeof w.config.chart.events.selection === 'function') {
-          console.log('function here')
           // TODO : xaxis is sending back global min instead of min of range
           w.config.chart.events.selection(me.ctx, {
             xaxis,

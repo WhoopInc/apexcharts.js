@@ -15606,11 +15606,16 @@
               });
             }
           }
-        }
+        } // add mousedown?
+
 
         if (e.type === 'mouseup' || e.type === 'touchend' || e.type === 'mouseleave') {
-          // we will be calling getBoundingClientRect on each mousedown/mousemove/mouseup
+          console.log('event type', e.type); // we will be calling getBoundingClientRect on each mousedown/mousemove/mouseup
+
           var _gridRectDim = me.gridRect.getBoundingClientRect(); // Issue is that it's not going in this if statement and then going to the selectionDrawn function - that's what kicks off the selection event handler
+          // TODO : Might be other events that need to be checked?? Occasionally drag events aren't getting caught
+          // TODO : look at touchend and mouseleave to handle those
+          // mousedown is probably just not getting set properly for me stuff
 
 
           if (me.w.globals.mousedown || e.type === 'mouseup') {
@@ -15674,18 +15679,20 @@
           if (typeof w.globals.selection !== 'undefined' && w.globals.selection !== null) {
             this.drawSelectionRect(w.globals.selection);
           } else {
-            if (w.config.chart.selection.yaxis.min !== undefined && w.config.chart.selection.yaxis.max !== undefined) {
-              // const x =
-              //   (w.config.chart.selection.xaxis.min - w.globals.minX) /
-              //   xyRatios.xRatio
-              // const width =
-              //   (w.globals.maxY - w.config.chart.selection.yaxis.max) /
-              //   xyRatios.invertedYRatio -
-              //   x
+            if (w.globals.isTimelineBar) ;
+
+            if (w.globals.isTimelineBar && w.config.chart.selection.yaxis.min !== undefined && w.config.chart.selection.yaxis.max !== undefined || !w.globals.isTimelineBar && w.config.chart.selection.xaxis.min !== undefined && w.config.chart.selection.xaxis.max !== undefined) {
               // This is so that the yaxis min/max vals will be used as bounds on the initial load
-              // But this is not setting the selection values properly on the global config (it's undefined)
-              var x = (w.config.chart.selection.yaxis.min - w.globals.minY) / xyRatios.invertedYRatio;
-              var width = w.globals.gridWidth - (w.globals.maxY - w.config.chart.selection.yaxis.max) / xyRatios.invertedYRatio - x;
+              var x, width;
+
+              if (w.globals.isTimelineBar) {
+                x = (w.config.chart.selection.yaxis.min - w.globals.minY) / xyRatios.invertedYRatio;
+                width = w.globals.gridWidth - (w.globals.maxY - w.config.chart.selection.yaxis.max) / xyRatios.invertedYRatio - x;
+              } else {
+                x = (w.config.chart.selection.xaxis.min - w.globals.minX) / xyRatios.xRatio;
+                width = (w.globals.maxY - w.config.chart.selection.yaxis.max) / xyRatios.invertedYRatio - x;
+              }
+
               var selectionRect = {
                 x: x,
                 y: 0,
@@ -15699,14 +15706,12 @@
               this.makeSelectionRectDraggable();
 
               if (typeof w.config.chart.events.selection === 'function') {
+                var xAxisMin = w.globals.isTimelineBar ? w.config.chart.selection.yaxis.min : w.config.chart.selection.axis.min;
+                var xAxisMax = w.globals.isTimelineBar ? w.config.chart.selection.yaxis.max : w.config.chart.selection.axis.max;
                 w.config.chart.events.selection(this.ctx, {
-                  // xaxis: {
-                  //   min: w.config.chart.selection.axis.min,
-                  //   max: w.config.chart.selection.xaxis.max
-                  // },
                   xaxis: {
-                    min: w.config.chart.selection.yaxis.min,
-                    max: w.config.chart.selection.yaxis.max
+                    min: xAxisMin,
+                    max: xAxisMax
                   },
                   yaxis: {}
                 });
@@ -15767,7 +15772,6 @@
               'stroke-dasharray': w.config.chart.selection.stroke.dashArray,
               'stroke-opacity': w.config.chart.selection.stroke.opacity
             });
-            console.log('selectionrect', x, width);
             Graphics.setAttrs(selectionRect.node, scalingAttrs);
           }
         }
@@ -15914,46 +15918,42 @@
         var xyRatios = this.xyRatios;
         var toolbar = this.ctx.toolbar;
 
-        var getSelAttr = function getSelAttr(attr) {
-          return parseFloat(me.selectionRect.node.getAttribute(attr));
-        };
+        if (w.globals.isTimelineBar) {
+          var getSelAttr = function getSelAttr(attr) {
+            return parseFloat(me.selectionRect.node.getAttribute(attr));
+          };
 
-        var testing = {
-          x: getSelAttr('x'),
-          y: getSelAttr('y'),
-          width: getSelAttr('width'),
-          height: getSelAttr('height')
-        };
-        me.startX = testing.x;
-        me.endX = testing.x + testing.width; // if (me.startX > me.endX) {
-        //   console.log(me)
-        //   console.log('me.endX here', me.startX, me.endX)
-        //   let tempX = me.startX
-        //   me.startX = me.endX
-        //   // me.endX = tempX
-        //   me.endX = me.selection.x + me.selection.width
-        // }
-        // if (me.startY > me.endY) {
-        //   console.log('me.startY here')
-        //   let tempY = me.startY
-        //   me.startY = me.endY
-        //   me.endY = tempY
-        // }
+          var testing = {
+            x: getSelAttr('x'),
+            y: getSelAttr('y'),
+            width: getSelAttr('width'),
+            height: getSelAttr('height')
+          };
+          me.startX = testing.x;
+          me.endX = testing.x + testing.width;
+        } else {
+          if (me.startX > me.endX) {
+            var tempX = me.startX;
+            me.startX = me.endX;
+            me.endX = tempX;
+          }
+
+          if (me.startY > me.endY) {
+            var tempY = me.startY;
+            me.startY = me.endY;
+            me.endY = tempY;
+          }
+        }
 
         var xLowestValue = undefined;
-        var xHighestValue = undefined; // TODO : add this check at places where I changed things
+        var xHighestValue = undefined;
 
         if (!w.globals.isTimelineBar) {
           xLowestValue = w.globals.xAxisScale.niceMin + me.startX * xyRatios.xRatio;
           xHighestValue = w.globals.xAxisScale.niceMin + me.endX * xyRatios.xRatio;
         } else {
-          console.log(me);
-          console.log('testing', me.startX, me.endX); // endX is getting lowered
-
-          xLowestValue = w.globals.yAxisScale[0].niceMin + me.startX * xyRatios.invertedYRatio; // TODO it's switching xhighestvalue to the old lowest value. why though? - this needs to be fixed
-
+          xLowestValue = w.globals.yAxisScale[0].niceMin + me.startX * xyRatios.invertedYRatio;
           xHighestValue = w.globals.yAxisScale[0].niceMin + me.endX * xyRatios.invertedYRatio;
-          console.log('xHighestValue', new Date(xHighestValue));
         } // TODO: we will consider the 1st y axis values here for getting highest and lowest y
 
 
@@ -16049,8 +16049,7 @@
             w.globals.selection = me.selection;
 
             if (typeof w.config.chart.events.selection === 'function') {
-              console.log('function here'); // TODO : xaxis is sending back global min instead of min of range
-
+              // TODO : xaxis is sending back global min instead of min of range
               w.config.chart.events.selection(me.ctx, {
                 xaxis: _xaxis,
                 yaxis: _yaxis
