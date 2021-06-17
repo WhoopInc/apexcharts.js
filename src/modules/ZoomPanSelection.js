@@ -542,15 +542,15 @@ export default class ZoomPanSelection extends Toolbar {
       const getSelAttr = (attr) => {
         return parseFloat(me.selectionRect.node.getAttribute(attr))
       }
-      const testing = {
+      const selectionRectAttributes = {
         x: getSelAttr('x'),
         y: getSelAttr('y'),
         width: getSelAttr('width'),
         height: getSelAttr('height')
       }
 
-      me.startX = testing.x
-      me.endX = testing.x + testing.width
+      me.startX = selectionRectAttributes.x
+      me.endX = selectionRectAttributes.x + selectionRectAttributes.width
     } else {
       if (me.startX > me.endX) {
         let tempX = me.startX
