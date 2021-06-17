@@ -487,28 +487,43 @@ export default class ZoomPanSelection extends Toolbar {
         const gridRectDim = this.gridRect.getBoundingClientRect()
         const selectionRect = selRect.node.getBoundingClientRect()
 
-        const minX =
-          w.globals.xAxisScale.niceMin +
-          (selectionRect.left - gridRectDim.left) * xyRatios.xRatio
-        const maxX =
-          w.globals.xAxisScale.niceMin +
-          (selectionRect.right - gridRectDim.left) * xyRatios.xRatio
+        let xyAxis
+        if (w.globals.isTimelineBar) {
+          const minY =
+            w.globals.yAxisScale[0].niceMin +
+            (selectionRect.left - gridRectDim.left) * xyRatios.invertedYRatio
+          const maxY =
+            w.globals.yAxisScale[0].niceMin +
+            (selectionRect.right - gridRectDim.left) * xyRatios.invertedYRatio
+          xyAxis = {
+            xaxis: {
+              min: minY,
+              max: maxY
+            }
+          }
+        } else {
+          const minX =
+            w.globals.xAxisScale.niceMin +
+            (selectionRect.left - gridRectDim.left) * xyRatios.xRatio
+          const maxX =
+            w.globals.xAxisScale.niceMin +
+            (selectionRect.right - gridRectDim.left) * xyRatios.xRatio
+          const minY =
+            w.globals.yAxisScale[0].niceMin +
+            (gridRectDim.bottom - selectionRect.bottom) * xyRatios.yRatio[0]
+          const maxY =
+            w.globals.yAxisScale[0].niceMax -
+            (selectionRect.top - gridRectDim.top) * xyRatios.yRatio[0]
 
-        const minY =
-          w.globals.yAxisScale[0].niceMin +
-          (gridRectDim.bottom - selectionRect.bottom) * xyRatios.yRatio[0]
-        const maxY =
-          w.globals.yAxisScale[0].niceMax -
-          (selectionRect.top - gridRectDim.top) * xyRatios.yRatio[0]
-
-        const xyAxis = {
-          xaxis: {
-            min: minX,
-            max: maxX
-          },
-          yaxis: {
-            min: minY,
-            max: maxY
+          xyAxis = {
+            xaxis: {
+              min: minX,
+              max: maxX
+            },
+            yaxis: {
+              min: minY,
+              max: maxY
+            }
           }
         }
         w.config.chart.events.selection(this.ctx, xyAxis)

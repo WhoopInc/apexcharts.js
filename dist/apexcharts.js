@@ -15886,20 +15886,37 @@
             var gridRectDim = _this3.gridRect.getBoundingClientRect();
 
             var selectionRect = selRect.node.getBoundingClientRect();
-            var minX = w.globals.xAxisScale.niceMin + (selectionRect.left - gridRectDim.left) * xyRatios.xRatio;
-            var maxX = w.globals.xAxisScale.niceMin + (selectionRect.right - gridRectDim.left) * xyRatios.xRatio;
-            var minY = w.globals.yAxisScale[0].niceMin + (gridRectDim.bottom - selectionRect.bottom) * xyRatios.yRatio[0];
-            var maxY = w.globals.yAxisScale[0].niceMax - (selectionRect.top - gridRectDim.top) * xyRatios.yRatio[0];
-            var xyAxis = {
-              xaxis: {
-                min: minX,
-                max: maxX
-              },
-              yaxis: {
-                min: minY,
-                max: maxY
-              }
-            };
+            var xyAxis;
+
+            if (w.globals.isTimelineBar) {
+              var minY = w.globals.yAxisScale[0].niceMin + (selectionRect.left - gridRectDim.left) * xyRatios.invertedYRatio;
+              var maxY = w.globals.yAxisScale[0].niceMin + (selectionRect.right - gridRectDim.left) * xyRatios.invertedYRatio;
+              xyAxis = {
+                xaxis: {
+                  min: minY,
+                  max: maxY
+                }
+              };
+            } else {
+              var minX = w.globals.xAxisScale.niceMin + (selectionRect.left - gridRectDim.left) * xyRatios.xRatio;
+              var maxX = w.globals.xAxisScale.niceMin + (selectionRect.right - gridRectDim.left) * xyRatios.xRatio;
+
+              var _minY = w.globals.yAxisScale[0].niceMin + (gridRectDim.bottom - selectionRect.bottom) * xyRatios.yRatio[0];
+
+              var _maxY = w.globals.yAxisScale[0].niceMax - (selectionRect.top - gridRectDim.top) * xyRatios.yRatio[0];
+
+              xyAxis = {
+                xaxis: {
+                  min: minX,
+                  max: maxX
+                },
+                yaxis: {
+                  min: _minY,
+                  max: _maxY
+                }
+              };
+            }
+
             w.config.chart.events.selection(_this3.ctx, xyAxis);
 
             if (w.config.chart.brush.enabled && w.config.chart.events.brushScrolled !== undefined) {
