@@ -15606,17 +15606,11 @@
               });
             }
           }
-        } // add mousedown?
-
+        }
 
         if (e.type === 'mouseup' || e.type === 'touchend' || e.type === 'mouseleave') {
-          console.log('event type', e.type); // we will be calling getBoundingClientRect on each mousedown/mousemove/mouseup
-
-          var _gridRectDim = me.gridRect.getBoundingClientRect(); // Issue is that it's not going in this if statement and then going to the selectionDrawn function - that's what kicks off the selection event handler
-          // TODO : Might be other events that need to be checked?? Occasionally drag events aren't getting caught
-          // TODO : look at touchend and mouseleave to handle those
-          // mousedown is probably just not getting set properly for me stuff
-
+          // we will be calling getBoundingClientRect on each mousedown/mousemove/mouseup
+          var _gridRectDim = me.gridRect.getBoundingClientRect();
 
           if (me.w.globals.mousedown || e.type === 'mouseup') {
             // user released the drag, now do all the calculations
