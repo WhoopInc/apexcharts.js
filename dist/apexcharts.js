@@ -15673,8 +15673,6 @@
           if (typeof w.globals.selection !== 'undefined' && w.globals.selection !== null) {
             this.drawSelectionRect(w.globals.selection);
           } else {
-            if (w.globals.isTimelineBar) ;
-
             if (w.globals.isTimelineBar && w.config.chart.selection.yaxis.min !== undefined && w.config.chart.selection.yaxis.max !== undefined || !w.globals.isTimelineBar && w.config.chart.selection.xaxis.min !== undefined && w.config.chart.selection.xaxis.max !== undefined) {
               // This is so that the yaxis min/max vals will be used as bounds on the initial load
               var x, width;

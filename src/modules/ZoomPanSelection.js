@@ -260,9 +260,6 @@ export default class ZoomPanSelection extends Toolbar {
       ) {
         this.drawSelectionRect(w.globals.selection)
       } else {
-        if (w.globals.isTimelineBar) {
-        } else {
-        }
         if (
           (w.globals.isTimelineBar &&
             w.config.chart.selection.yaxis.min !== undefined &&
