@@ -38,7 +38,7 @@
     </script>
 
 
-    <script src="../../dist/apexcharts.js"></script>
+    <script src="../../../dist/apexcharts.js"></script>
 </head>
 
 <body>
@@ -60,10 +60,10 @@
                 },*/
                 events: {
                     selection: function (chartContext, { xaxis, yaxis }) {
-                        console.log('xaxis', xaxis)
-                        console.log(new Date(xaxis.min))
-                        console.log(new Date(xaxis.max))
-                        console.log('yaxis', yaxis)
+                        console.log('xaxis', new Date(xaxis.min), new Date(xaxis.max))
+                    },
+                    updated: function (chartContext, config) {
+                        console.log('updated')
                     }
                 },
                 toolbar: {
