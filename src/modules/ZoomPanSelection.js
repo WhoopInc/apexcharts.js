@@ -280,6 +280,7 @@ export default class ZoomPanSelection extends Toolbar {
           // This is so that the yaxis min/max vals will be used as bounds on the initial load
           let x, width
           if (w.globals.isTimelineBar) {
+            // Changing these for timeline bar because y values are the timestamps instead of x values for other graphs
             x =
               (w.config.chart.selection.yaxis.min - w.globals.minY) /
               xyRatios.invertedYRatio
@@ -292,10 +293,10 @@ export default class ZoomPanSelection extends Toolbar {
             x =
               (w.config.chart.selection.xaxis.min - w.globals.minX) /
               xyRatios.xRatio
-
             width =
-              (w.globals.maxY - w.config.chart.selection.yaxis.max) /
-                xyRatios.invertedYRatio -
+              w.globals.gridWidth -
+              (w.globals.maxX - w.config.chart.selection.xaxis.max) /
+                xyRatios.xRatio -
               x
           }
           let selectionRect = {
@@ -312,10 +313,10 @@ export default class ZoomPanSelection extends Toolbar {
           if (typeof w.config.chart.events.selection === 'function') {
             const xAxisMin = w.globals.isTimelineBar
               ? w.config.chart.selection.yaxis.min
-              : w.config.chart.selection.axis.min
+              : w.config.chart.selection.xaxis.min
             const xAxisMax = w.globals.isTimelineBar
               ? w.config.chart.selection.yaxis.max
-              : w.config.chart.selection.axis.max
+              : w.config.chart.selection.xaxis.max
             w.config.chart.events.selection(this.ctx, {
               xaxis: {
                 min: xAxisMin,
@@ -452,7 +453,6 @@ export default class ZoomPanSelection extends Toolbar {
   }
 
   selectionDragging(type, e) {
-    // TODO : max value is changing on min value drag?
     const w = this.w
     const xyRatios = this.xyRatios
 
@@ -670,7 +670,6 @@ export default class ZoomPanSelection extends Toolbar {
 
         w.globals.selection = me.selection
         if (typeof w.config.chart.events.selection === 'function') {
-          // TODO : xaxis is sending back global min instead of min of range
           w.config.chart.events.selection(me.ctx, {
             xaxis,
             yaxis

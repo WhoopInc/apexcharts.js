@@ -15686,11 +15686,12 @@
               var x, width;
 
               if (w.globals.isTimelineBar) {
+                // Changing these for timeline bar because y values are the timestamps instead of x values for other graphs
                 x = (w.config.chart.selection.yaxis.min - w.globals.minY) / xyRatios.invertedYRatio;
                 width = w.globals.gridWidth - (w.globals.maxY - w.config.chart.selection.yaxis.max) / xyRatios.invertedYRatio - x;
               } else {
                 x = (w.config.chart.selection.xaxis.min - w.globals.minX) / xyRatios.xRatio;
-                width = (w.globals.maxY - w.config.chart.selection.yaxis.max) / xyRatios.invertedYRatio - x;
+                width = w.globals.gridWidth - (w.globals.maxX - w.config.chart.selection.xaxis.max) / xyRatios.xRatio - x;
               }
 
               var selectionRect = {
@@ -15706,8 +15707,8 @@
               this.makeSelectionRectDraggable();
 
               if (typeof w.config.chart.events.selection === 'function') {
-                var xAxisMin = w.globals.isTimelineBar ? w.config.chart.selection.yaxis.min : w.config.chart.selection.axis.min;
-                var xAxisMax = w.globals.isTimelineBar ? w.config.chart.selection.yaxis.max : w.config.chart.selection.axis.max;
+                var xAxisMin = w.globals.isTimelineBar ? w.config.chart.selection.yaxis.min : w.config.chart.selection.xaxis.min;
+                var xAxisMax = w.globals.isTimelineBar ? w.config.chart.selection.yaxis.max : w.config.chart.selection.xaxis.max;
                 w.config.chart.events.selection(this.ctx, {
                   xaxis: {
                     min: xAxisMin,
@@ -15856,7 +15857,6 @@
       value: function selectionDragging(type, e) {
         var _this3 = this;
 
-        // TODO : max value is changing on min value drag?
         var w = this.w;
         var xyRatios = this.xyRatios;
         var selRect = this.selectionRect;
@@ -16049,7 +16049,6 @@
             w.globals.selection = me.selection;
 
             if (typeof w.config.chart.events.selection === 'function') {
-              // TODO : xaxis is sending back global min instead of min of range
               w.config.chart.events.selection(me.ctx, {
                 xaxis: _xaxis,
                 yaxis: _yaxis
