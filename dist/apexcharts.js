@@ -9,6 +9,44 @@
   (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.ApexCharts = factory());
 }(this, (function () { 'use strict';
 
+  function ownKeys(object, enumerableOnly) {
+    var keys = Object.keys(object);
+
+    if (Object.getOwnPropertySymbols) {
+      var symbols = Object.getOwnPropertySymbols(object);
+
+      if (enumerableOnly) {
+        symbols = symbols.filter(function (sym) {
+          return Object.getOwnPropertyDescriptor(object, sym).enumerable;
+        });
+      }
+
+      keys.push.apply(keys, symbols);
+    }
+
+    return keys;
+  }
+
+  function _objectSpread2(target) {
+    for (var i = 1; i < arguments.length; i++) {
+      var source = arguments[i] != null ? arguments[i] : {};
+
+      if (i % 2) {
+        ownKeys(Object(source), true).forEach(function (key) {
+          _defineProperty(target, key, source[key]);
+        });
+      } else if (Object.getOwnPropertyDescriptors) {
+        Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
+      } else {
+        ownKeys(Object(source)).forEach(function (key) {
+          Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
+        });
+      }
+    }
+
+    return target;
+  }
+
   function _typeof(obj) {
     "@babel/helpers - typeof";
 
@@ -62,40 +100,6 @@
     return obj;
   }
 
-  function ownKeys(object, enumerableOnly) {
-    var keys = Object.keys(object);
-
-    if (Object.getOwnPropertySymbols) {
-      var symbols = Object.getOwnPropertySymbols(object);
-      if (enumerableOnly) symbols = symbols.filter(function (sym) {
-        return Object.getOwnPropertyDescriptor(object, sym).enumerable;
-      });
-      keys.push.apply(keys, symbols);
-    }
-
-    return keys;
-  }
-
-  function _objectSpread2(target) {
-    for (var i = 1; i < arguments.length; i++) {
-      var source = arguments[i] != null ? arguments[i] : {};
-
-      if (i % 2) {
-        ownKeys(Object(source), true).forEach(function (key) {
-          _defineProperty(target, key, source[key]);
-        });
-      } else if (Object.getOwnPropertyDescriptors) {
-        Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
-      } else {
-        ownKeys(Object(source)).forEach(function (key) {
-          Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
-        });
-      }
-    }
-
-    return target;
-  }
-
   function _inherits(subClass, superClass) {
     if (typeof superClass !== "function" && superClass !== null) {
       throw new TypeError("Super expression must either be null or a function");
@@ -133,7 +137,7 @@
     if (typeof Proxy === "function") return true;
 
     try {
-      Date.prototype.toString.call(Reflect.construct(Date, [], function () {}));
+      Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {}));
       return true;
     } catch (e) {
       return false;
@@ -184,7 +188,7 @@
   }
 
   function _iterableToArray(iter) {
-    if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter);
+    if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter);
   }
 
   function _unsupportedIterableToArray(o, minLen) {
@@ -2152,14 +2156,14 @@
 
     _createClass(CoreUtils, [{
       key: "getStackedSeriesTotals",
-
+      value:
       /**
        * @memberof CoreUtils
        * returns the sum of all individual values in a multiple stacked series
        * Eg. w.globals.series = [[32,33,43,12], [2,3,5,1]]
        *  @return [34,36,48,13]
        **/
-      value: function getStackedSeriesTotals() {
+      function getStackedSeriesTotals() {
         var w = this.w;
         var total = [];
         if (w.globals.series.length === 0) return total;
@@ -3776,6 +3780,7 @@
             custom: undefined,
             fillSeriesColor: false,
             theme: 'light',
+            preventOverflow: false,
             style: {
               fontSize: '12px',
               fontFamily: undefined
@@ -11985,8 +11990,10 @@
 
               if (gl.seriesGoals[i] && gl.seriesGoals[i][j] && Array.isArray(gl.seriesGoals[i][j])) {
                 gl.seriesGoals[i][j].forEach(function (g) {
+                  minY = Math.min(minY, g.value);
                   maxY = Math.max(maxY, g.value);
                   highestY = maxY;
+                  lowestY = minY;
                 });
               }
 
@@ -15605,7 +15612,7 @@
           // we will be calling getBoundingClientRect on each mousedown/mousemove/mouseup
           var _gridRectDim = me.gridRect.getBoundingClientRect();
 
-          if (me.w.globals.mousedown) {
+          if (me.w.globals.mousedown || e.type === 'mouseup') {
             // user released the drag, now do all the calculations
             me.endX = me.clientX - _gridRectDim.left;
             me.endY = me.clientY - _gridRectDim.top;
@@ -15666,9 +15673,19 @@
           if (typeof w.globals.selection !== 'undefined' && w.globals.selection !== null) {
             this.drawSelectionRect(w.globals.selection);
           } else {
-            if (w.config.chart.selection.xaxis.min !== undefined && w.config.chart.selection.xaxis.max !== undefined) {
-              var x = (w.config.chart.selection.xaxis.min - w.globals.minX) / xyRatios.xRatio;
-              var width = w.globals.gridWidth - (w.globals.maxX - w.config.chart.selection.xaxis.max) / xyRatios.xRatio - x;
+            if (w.globals.isTimelineBar && w.config.chart.selection.yaxis.min !== undefined && w.config.chart.selection.yaxis.max !== undefined || !w.globals.isTimelineBar && w.config.chart.selection.xaxis.min !== undefined && w.config.chart.selection.xaxis.max !== undefined) {
+              // This is so that the yaxis min/max vals will be used as bounds on the initial load
+              var x, width;
+
+              if (w.globals.isTimelineBar) {
+                // Changing these for timeline bar because y values are the timestamps instead of x values for other graphs
+                x = (w.config.chart.selection.yaxis.min - w.globals.minY) / xyRatios.invertedYRatio;
+                width = w.globals.gridWidth - (w.globals.maxY - w.config.chart.selection.yaxis.max) / xyRatios.invertedYRatio - x;
+              } else {
+                x = (w.config.chart.selection.xaxis.min - w.globals.minX) / xyRatios.xRatio;
+                width = w.globals.gridWidth - (w.globals.maxX - w.config.chart.selection.xaxis.max) / xyRatios.xRatio - x;
+              }
+
               var selectionRect = {
                 x: x,
                 y: 0,
@@ -15682,10 +15699,12 @@
               this.makeSelectionRectDraggable();
 
               if (typeof w.config.chart.events.selection === 'function') {
+                var xAxisMin = w.globals.isTimelineBar ? w.config.chart.selection.yaxis.min : w.config.chart.selection.xaxis.min;
+                var xAxisMax = w.globals.isTimelineBar ? w.config.chart.selection.yaxis.max : w.config.chart.selection.xaxis.max;
                 w.config.chart.events.selection(this.ctx, {
                   xaxis: {
-                    min: w.config.chart.selection.xaxis.min,
-                    max: w.config.chart.selection.xaxis.max
+                    min: xAxisMin,
+                    max: xAxisMax
                   },
                   yaxis: {}
                 });
@@ -15859,20 +15878,37 @@
             var gridRectDim = _this3.gridRect.getBoundingClientRect();
 
             var selectionRect = selRect.node.getBoundingClientRect();
-            var minX = w.globals.xAxisScale.niceMin + (selectionRect.left - gridRectDim.left) * xyRatios.xRatio;
-            var maxX = w.globals.xAxisScale.niceMin + (selectionRect.right - gridRectDim.left) * xyRatios.xRatio;
-            var minY = w.globals.yAxisScale[0].niceMin + (gridRectDim.bottom - selectionRect.bottom) * xyRatios.yRatio[0];
-            var maxY = w.globals.yAxisScale[0].niceMax - (selectionRect.top - gridRectDim.top) * xyRatios.yRatio[0];
-            var xyAxis = {
-              xaxis: {
-                min: minX,
-                max: maxX
-              },
-              yaxis: {
-                min: minY,
-                max: maxY
-              }
-            };
+            var xyAxis;
+
+            if (w.globals.isTimelineBar) {
+              var minY = w.globals.yAxisScale[0].niceMin + (selectionRect.left - gridRectDim.left) * xyRatios.invertedYRatio;
+              var maxY = w.globals.yAxisScale[0].niceMin + (selectionRect.right - gridRectDim.left) * xyRatios.invertedYRatio;
+              xyAxis = {
+                xaxis: {
+                  min: minY,
+                  max: maxY
+                }
+              };
+            } else {
+              var minX = w.globals.xAxisScale.niceMin + (selectionRect.left - gridRectDim.left) * xyRatios.xRatio;
+              var maxX = w.globals.xAxisScale.niceMin + (selectionRect.right - gridRectDim.left) * xyRatios.xRatio;
+
+              var _minY = w.globals.yAxisScale[0].niceMin + (gridRectDim.bottom - selectionRect.bottom) * xyRatios.yRatio[0];
+
+              var _maxY = w.globals.yAxisScale[0].niceMax - (selectionRect.top - gridRectDim.top) * xyRatios.yRatio[0];
+
+              xyAxis = {
+                xaxis: {
+                  min: minX,
+                  max: maxX
+                },
+                yaxis: {
+                  min: _minY,
+                  max: _maxY
+                }
+              };
+            }
+
             w.config.chart.events.selection(_this3.ctx, xyAxis);
 
             if (w.config.chart.brush.enabled && w.config.chart.events.brushScrolled !== undefined) {
@@ -15891,16 +15927,31 @@
         var xyRatios = this.xyRatios;
         var toolbar = this.ctx.toolbar;
 
-        if (me.startX > me.endX) {
-          var tempX = me.startX;
-          me.startX = me.endX;
-          me.endX = tempX;
-        }
+        if (w.globals.isTimelineBar) {
+          var getSelAttr = function getSelAttr(attr) {
+            return parseFloat(me.selectionRect.node.getAttribute(attr));
+          };
 
-        if (me.startY > me.endY) {
-          var tempY = me.startY;
-          me.startY = me.endY;
-          me.endY = tempY;
+          var selectionRectAttributes = {
+            x: getSelAttr('x'),
+            y: getSelAttr('y'),
+            width: getSelAttr('width'),
+            height: getSelAttr('height')
+          };
+          me.startX = selectionRectAttributes.x;
+          me.endX = selectionRectAttributes.x + selectionRectAttributes.width;
+        } else {
+          if (me.startX > me.endX) {
+            var tempX = me.startX;
+            me.startX = me.endX;
+            me.endX = tempX;
+          }
+
+          if (me.startY > me.endY) {
+            var tempY = me.startY;
+            me.startY = me.endY;
+            me.endY = tempY;
+          }
         }
 
         var xLowestValue = undefined;
@@ -17187,6 +17238,10 @@
               y = 0;
             }
           }
+        }
+
+        if (y < 0 && w.config.tooltip.preventOverflow) {
+          y = 0;
         }
 
         if (!isNaN(x)) {
@@ -25990,10 +26045,10 @@
               }
 
               if (topParent != document) throw new Error('Element not in the dom');
-            } else {} // the element is NOT in the dom, throw error
-            // disabling the check below which fixes issue #76
-            // if (!document.documentElement.contains(element.node)) throw new Exception('Element not in the dom')
-            // find native bbox
+            } else {// the element is NOT in the dom, throw error
+              // disabling the check below which fixes issue #76
+              // if (!document.documentElement.contains(element.node)) throw new Exception('Element not in the dom')
+            } // find native bbox
 
 
             box = element.node.getBBox();
